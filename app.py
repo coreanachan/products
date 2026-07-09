@@ -1,8 +1,12 @@
 import streamlit as st
 import math
 
-st.title("最新優惠")
-st.write("這裡顯示所有個人防護商品")
+st.set_page_config(page_title="電商網站 Demo", layout="wide")
+
+# 初始化狀態
+if "cart" not in st.session_state:
+    st.session_state.cart = []
+
 # 模擬商品資料
 products = [
     {"id": i, "name": f"商品{i}", "price": 100+i*10, "old_price": 120+i*10,
@@ -10,11 +14,30 @@ products = [
     for i in range(1, 31)
 ]
 
-# Header
-st.markdown(f"<div style='display:flex;justify-content:space-between;align-items:center;background:#f5f5f5;padding:10px;'>"
-            f"<div style='font-size:24px;font-weight:bold;'>🛠️ 公司Logo</div>"
-            f"<div>🛒 購物車 <span style='background:red;color:white;border-radius:50%;padding:2px 6px'>{len(st.session_state.get('cart',[]))}</span></div></div>",
-            unsafe_allow_html=True)
+# CSS 樣式
+st.markdown("""
+<style>
+.container {max-width:1440px; margin:0 auto; padding:0 16px;}
+.header {display:flex; justify-content:space-between; align-items:center; background:#222; color:#fff; padding:15px;}
+.logo {font-size:28px; font-weight:bold;}
+.badge {background:red; color:white; border-radius:50%; padding:2px 6px; font-size:12px; margin-left:5px;}
+.hero {background:#f0f0f0; padding:40px; text-align:center; margin-bottom:20px;}
+.product-card {border:1px solid #ccc; padding:10px; margin:10px; border-radius:8px; background:#fff;}
+.product-card img {width:100%; transition:transform 0.3s;}
+.product-card img:hover {transform:scale(1.05);}
+.price {color:red; font-weight:bold;}
+.old-price {text-decoration:line-through; color:#888;}
+@media (max-width:768px) {.product-card {width:100%;}}
+@media (min-width:768px) and (max-width:1024px) {.product-card {width:45%;}}
+@media (min-width:1024px) {.product-card {width:30%;}}
+</style>
+""", unsafe_allow_html=True)
+
+# Header Banner
+st.markdown(f"<div class='header'><div class='logo'>🛠️ 公司名稱</div><div>🛒 購物車 <span class='badge'>{len(st.session_state.cart)}</span></div></div>", unsafe_allow_html=True)
+
+# Hero 區塊
+st.markdown("<div class='hero'><h2>🎉 最新優惠專區</h2><p>夏季促銷 | 新品上架 | VIP專屬優惠</p></div>", unsafe_allow_html=True)
 
 # 搜尋與排序
 query = st.text_input("🔍 搜尋商品")
@@ -38,9 +61,15 @@ page_products = filtered[start:end]
 cols = st.columns(3)
 for idx, p in enumerate(page_products):
     with cols[idx % 3]:
-        st.image(p["img"], caption=p["name"])
-        st.write(f"💲 {p['price']} 元 (原價 {p['old_price']} 元)")
-        st.write(f"庫存: {p['stock']} 件")
+        st.markdown(f"""
+        <div class='product-card'>
+            <img src='{p['img']}'>
+            <h3>{p['name']}</h3>
+            <p><span class='old-price'>{p['old_price']} 元</span> <span class='price'>{p['price']} 元</span></p>
+            <p>庫存: {p['stock']} 件</p>
+        </div>
+        """, unsafe_allow_html=True)
+        qty = st.number_input(f"數量 ({p['name']})", min_value=1, max_value=p['stock'], key=f"qty_{p['id']}")
         if st.button(f"加入購物車: {p['name']}", key=f"btn_{p['id']}"):
-            st.session_state.setdefault("cart", []).append(p)
-            st.success(f"✅ 已加入購物車: {p['name']}")
+            st.session_state.cart.append({"name": p["name"], "price": p["price"], "quantity": qty})
+            st.success(f"✅ 已加入購物車: {p['name']} x {qty}")
